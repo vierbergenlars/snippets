@@ -13,7 +13,7 @@
     
     var SortableTable = function($table, options) {
         this.$table = $table.find('tbody');
-        this.options = $.extend({}, this._defaults, options);
+        this.options = $.extend({}, $.fn.sortableTable.defaults, options);
         if(this.options.buttons) {
             this.$saveButton = $(this.options.buttons.save);
             this.$cancelButton = $(this.options.buttons.cancel);
@@ -38,7 +38,9 @@
                 $this.width($this.width());
             });
             var that = this;
-            this.$table.on('sortupdate', function() {that._onSortUpdate();});
+            this.$table.on('sortupdate', function() {that._onSortUpdate()});
+            this.$saveButton.on('click', function() {that._onSortSave()});
+            this.$cancelButton.on('click', function() {that._onSortCancel()});
             this.callbacks.afterInit();
         },
         destroy: function() {
@@ -47,11 +49,12 @@
         _onSortUpdate: function() {
             if(false === this.callbacks.beforeUpdate()) return;
             var updated = this.$table.sortable('toArray', {attribute: this.attribute});
-            for(var i = 0; i < this._originalPositions; i++) {
-                if(updated[i] == this._originalPositions[i]) {
+            for(var i = 0; i < this._originalPositions.length; i++) {
+                if(updated[i] !== this._originalPositions[i]) {
                     if(this._$buttons)
                         this._$buttons.show();
-                    break;
+                    this.callbacks.afterUpdate();
+                    return;
                 }
             }
             if(this._$buttons)
@@ -63,7 +66,7 @@
             var data  = this.$table.sortable('serialize', {
                 key: this.key,
                 attribute: this.attribute,
-                expression: '/(.*)/'
+                expression: /(.*)/
             });
             var that = this;
             $.post(this.submitUrl, data, function(resp) { that._onSaveComplete(resp) }, 'json');
@@ -92,24 +95,6 @@
             this.callbacks.afterSave();
         }
     };
-
-    SortableTable._defaults = {
-        attribute: 'data-id',
-        key: 'items[]',
-        submitUrl: '',
-        callbacks: {
-            beforeInit: new Function,
-            afterInit: new Function,
-            beforeUpdate: new Function,
-            afterUpdate: new Function,
-            beforeSave: new Function,
-            afterSave: new Function,
-            saveSuccess: new Function,
-            saveError: new Function,
-            beforeCancel: new Function,
-            afterCancel: new Function
-        }
-    };
     
     $.fn.sortableTable = function(opts) {
         return this.each(function () {
@@ -127,7 +112,24 @@
         });
     };
     
-    $.fn.sortableTable.defaults = SortableTable._defaults;
+    $.fn.sortableTable.defaults = {
+        attribute: 'data-id',
+        key: 'items[]',
+        submitUrl: '',
+        callbacks: {
+            beforeInit: new Function,
+            afterInit: new Function,
+            beforeUpdate: new Function,
+            afterUpdate: new Function,
+            beforeSave: new Function,
+            afterSave: new Function,
+            saveSuccess: new Function,
+            saveError: new Function,
+            beforeCancel: new Function,
+            afterCancel: new Function
+        }
+    };
     
     $.fn.sortableTable.constructor = SortableTable;
 })(jQuery);
+
