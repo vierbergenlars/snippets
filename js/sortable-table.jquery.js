@@ -92,6 +92,7 @@
             } else {
                 this.callbacks.saveError();
             }
+            this._originalPositions = this.$table.sortable('toArray', {attribute: this.attribute});
             this.callbacks.afterSave();
         }
     };
