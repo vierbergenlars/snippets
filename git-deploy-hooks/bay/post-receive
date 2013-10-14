@@ -1,0 +1,30 @@
+#!/usr/bin/env php
+<?php
+$dir = dirname(dirname(__DIR__));
+function run($command) {
+    echo '\\-- '.$command.PHP_EOL;
+    exec($command, $_, $ret);
+    foreach($_ as $l)
+    echo '       . '.$l.PHP_EOL;
+    !$ret or die('Error: '.$command);
+}
+$current = file_get_contents($dir.'/hot');
+$next = $current%3+1;
+$deployDir =$dir.'/hot'.$next;
+echo "Deploying to $deployDir".PHP_EOL;
+run('sudo rm -rf '.$deployDir);
+mkdir($deployDir) or die('Cannot create deploy dir');
+echo "Unpacking files".PHP_EOL;
+run('GIT_WORK_TREE='.$deployDir.' git checkout -f');
+chdir($deployDir) or die('Cannot chdir');
+echo "Building package".PHP_EOL;
+run('cp -r '.$dir.'/extra/* .');
+run('composer install --no-dev --optimize-autoloader');
+run('app/console assetic:dump --env=prod');
+run('app/console cache:clear --env=prod');
+run('sudo chown -R www-data .');
+echo "Switch to hot".PHP_EOL;
+unlink($dir.'/live') or die ('Cannot unlink');
+symlink($deployDir, $dir.'/live') or die('Cannot symlink');
+file_put_contents($dir.'/hot', $next) or die('Cannot update hot');
+echo "Done".PHP_EOL;
