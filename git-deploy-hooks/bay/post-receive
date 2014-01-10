@@ -16,6 +16,7 @@ run('sudo rm -rf '.$deployDir);
 mkdir($deployDir) or die('Cannot create deploy dir');
 echo "Unpacking files".PHP_EOL;
 run('GIT_WORK_TREE='.$deployDir.' git checkout -f');
+run('git log -1 --pretty=format:%h > "'.$deployDir.'/web/VERSION"');
 chdir($deployDir) or die('Cannot chdir');
 echo "Building package".PHP_EOL;
 run('cp -r '.$dir.'/extra/* .');
